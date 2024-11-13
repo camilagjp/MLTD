@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diseño de Cajas Personalizadas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f4f4f9;
+    }
+    .box-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1000px;
+      position: relative;
+    }
+    .box {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+    }
+    .box-face {
+      position: absolute;
+      background: rgba(200, 200, 200, 0.8);
+      border: 2px solid #333;
+      background-size: cover; /* Ensure image covers the entire face */
+      background-position: center; /* Center the image */
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
+    }
+    .front  { transform: translateZ(5px); }
+    .back   { transform: rotateY(180deg) translateZ(5px); }
+    .left   { transform: rotateY(-90deg) translateZ(5px); }
+    .right  { transform: rotateY(90deg) translateZ(5px); }
+    .top    { transform: rotateX(90deg) translateZ(5px); }
+    .bottom { transform: rotateX(-90deg) translateZ(5px); }
+
+    .designer-container {
+      width: 400px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100%;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .submit-button, .reset-button {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    #boxPreviewContainer {
+      margin-top: 20px;
+      border: 1px solid #333;
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="box-container">
+    <div class="box" id="dynamicBox">
+      <div class="box-face front"></div>
+      <div class="box-face back"></div>
+      <div class="box-face left"></div>
+      <div class="box-face right"></div>
+      <div class="box-face top"></div>
+      <div class="box-face bottom"></div>
+    </div>
+  </div>
+  <div class="designer-container">
+    <h2>Diseña tu Caja Personalizada</h2>
+    <form id="boxDesigner">
+      <div class="input-group">
+        <label for="size">Tamaño de la caja (cm)</label>
+        <input type="text" id="size" placeholder="Largo x Ancho x Alto" oninput="updatePreview()">
+      </div>
+      <div class="input-group">
+        <label for="color">Color (hexadecimal)</label>
+        <input type="text" id="color" placeholder="#RRGGBB" oninput="updatePreview()">
+      </div>
+      <div class="input-group">
+        <label for="type">Tipo de Caja</label>
+        <select id="type" oninput="updatePreview()">
+          <option value="regular">Regular</option>
+          <option value="plegable">Plegable</option>
+          <option value="reforzada">Reforzada</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="design">Diseño</label>
+        <input type="file" id="design" accept="image/*" onchange="updatePreview()">
+      </div>
+      <div class="input-group">
+        <label for="finish">Acabados</label>
+        <select id="finish" oninput="updatePreview()">
+          <option value="mate">Mate</option>
+          <option value="brillante">Brillante</option>
+          <option value="laminado">Laminado</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="quantity">Cantidad</label>
+        <input type="number" id="quantity" min="1" placeholder="Número de cajas" oninput="updatePreview()">
+      </div>
+      <button type="submit" class="submit-button">Solicitar Cajas</button>
+      <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
+    </form>
+    <div id="boxPreviewContainer"></div>
+  </div>
+
+  <script>
+    document.getElementById('boxDesigner').addEventListener('submit', function(event) {
+      event.preventDefault(); 
+      submitForm();
+    });
+
+    function submitForm() {
+      const size = document.getElementById("size").value;
+      const color = document.getElementById("color").value;
+      const type = document.getElementById("type").value;
+      const design = document.getElementById("design").files[0];
+      const finish = document.getElementById("finish").value;
+      const quantity = document.getElementById("quantity").value;
+
+      if (!size || !color || !type || !finish || !quantity) {
+        alert("Por favor, completa todos los campos.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("size", size);
+      formData.append("color", color);
+      formData.append("type", type);
+      formData.append("design", design);
+      formData.append("finish", finish);
+      formData.append("quantity", quantity);
+
+      alert("¡Cajas solicitadas correctamente!");
+    }
+
+    function updatePreview() {
+      const sizeInput = document.getElementById("size").value;
+      const dimensions = sizeInput.split("x").map(dim => parseFloat(dim.trim()));
+      const length = dimensions[0] || 100; // Default length
+      const width = dimensions[1] || 100; // Default width
+      const height = dimensions[2] || 100; // Default height
+
+      // Update the size of the 3D box
+      const box = document.getElementById("dynamicBox");
+      box.style.width = `${width}px`;
+      box.style.height = `${height}px`;
+
+      // Update each face dimensions
+      const faces = document.querySelectorAll('.box-face');
+      faces[0].style.width = `${width}px`;  // front
+      faces[0].style.height = `${height}px`;
+      faces[1].style.width = `${width}px`;  // back
+      faces[1].style.height = `${height}px`;
+      faces[2].style.width = `${length}px`;  // left
+      faces[2].style.height = `${height}px`;
+      faces[3].style.width = `${length}px`;  // right
+      faces[3].style.height = `${height}px`;
+      faces[4].style.width = `${width}px`;  // top
+      faces[4].style.height = `${length}px`;
+      faces[5].style.width = `${width}px`;  // bottom
+      faces[5].style.height = `${length}px`;
+
+      // Set the correct transform for each face with separation
+      faces[0].style.transform = 'translateZ(' + (height / 2 + 5) + 'px)';  // front
+      faces[1].style.transform = 'rotateY(180deg) translateZ(' + (height / 2 + 5) + 'px)';  // back
+      faces[2].style.transform = 'rotateY(-90deg) translateZ(' + (length / 2 + 5) + 'px)';  // left
+      faces[3].style.transform = 'rotateY(90deg) translateZ(' + (length / 2 + 5) + 'px)';  // right
+      faces[4].style.transform = 'rotateX(90deg) translateZ(' + (height / 2 + 5) + 'px)';  // top
+      faces[5].style.transform = 'rotateX(-90deg) translateZ(' + (height / 2 + 5) + 'px)';  // bottom
+
+      // Update color for the faces
+      const colorInput = document.getElementById("color").value;
+      if (/^#[0-9A-F]{6}$/i.test(colorInput)) {
+        faces.forEach(face => {
+          face.style.backgroundColor = colorInput; // Set color to all faces
+        });
+      } else {
+        faces.forEach(face => face.style.backgroundColor = 'rgba(200, 200, 200, 0.8)'); // Reset to default color
+      }
+
+      // Load design image if provided
+      const designInput = document.getElementById("design");
+      if (designInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          faces[0].style.backgroundImage = `url(${e.target.result})`; // Set image to front face
+        }
+        reader.readAsDataURL(designInput.files[0]);
+      } else {
+        faces[0].style.backgroundImage = 'none'; // Clear background if no design is selected
+      }
+
+      // Update preview details
+      const type = document.getElementById("type").value || "No especificado";
+      const finish = document.getElementById("finish").value || "No especificado";
+
+      const previewHTML = `
+        <p><strong>Tamaño:</strong> ${sizeInput} (Largo x Ancho x Alto)</p>
+        <p><strong>Color:</strong> ${colorInput}</p>
+        <p><strong>Tipo:</strong> ${type}</p>
+        <p><strong>Acabado:</strong> ${finish}</p>
+      `;
+
+      document.getElementById("boxPreviewContainer").innerHTML = previewHTML;
+    }
+
+    function resetForm() {
+      document.getElementById("boxDesigner").reset(); // Reset form fields
+      const box = document.getElementById("dynamicBox");
+      box.style.width = '100px'; // Reset box size
+      box.style.height = '100px'; // Reset box height
+      const faces = document.querySelectorAll('.box-face');
+      faces.forEach(face => {
+        face.style.backgroundColor = 'rgba(200, 200, 200, 0.8)'; // Reset colors
+        face.style.backgroundImage = 'none'; // Clear design
+      });
+      document.getElementById("boxPreviewContainer").innerHTML = ''; // Clear preview details
+    }
+
+    // Add mouse interaction for rotating the box
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    const box = document.getElementById('dynamicBox');
+
+    box.addEventListener('mousedown', (event) => {
+      isDragging = true;
+      previousMousePosition = { x: event.clientX, y: event.clientY };
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!isDragging) return;
+
+      const deltaX = event.clientX - previousMousePosition.x;
+      const deltaY = event.clientY - previousMousePosition.y;
+
+      const currentRotation = box.style.transform.match(/rotateY\((-?\d+\.?\d*)deg\)/);
+      const currentYRotation = currentRotation ? parseFloat(currentRotation[1]) : 0;
+      const newYRotation = currentYRotation + deltaX;
+
+      const currentXRotation = box.style.transform.match(/rotateX\((-?\d+\.?\d*)deg\)/);
+      const currentXRotationValue = currentXRotation ? parseFloat(currentXRotation[1]) : 0;
+      const newXRotation = currentXRotationValue - deltaY;
+
+      box.style.transform = `rotateY(${newYRotation}deg) rotateX(${newXRotation}deg)`;
+
+      previousMousePosition = { x: event.clientX, y: event.clientY };
+    });
+  </script>
+</body>
+</html>
